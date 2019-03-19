@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+import com.mysql.jdbc.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,29 +42,49 @@ public class VendedorDAOImpl implements VendedorDAO{
 	}
 	@Override
 	public void adicionar(Vendedor v) {
-		PreparedStatement stmt = null;
-		ResultSet rs = null;
-			
-		String sql = "insert into vendedor(nome,email,aniversario,salario,departamentoId)values(?,?,?,?,?)";
+		PreparedStatement st = null;
+		
 		try {
-			stmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+			st = conn.prepareStatement("insert into vendedor(nome,email,aniversario,salario,departamentoId) values (?,?,?,?,?)",Statement.RETURN_GENERATED_KEYS);
+			st.setString(1, v.getNome());
+			st.setString(2, v.getEmail());
+			st.setDate(3, new java.sql.Date(v.getDataAniversario().getTime()));
+			st.setDouble(4, v.getSalario());
+			st.setInt(5,v.getDepartamento().getId());
+			
+			int linhasAfetadas = st.executeUpdate();
+			
+			System.out.println("Cadastrado !");
+			System.out.println("Linhas afetadas : "+linhasAfetadas);
+		}catch(SQLException e) {
+			throw new MinhaException(e.getMessage());
+		}finally {
+			try {
+				st.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
+	@Override
+	public void atualizar(Vendedor v) {
+		PreparedStatement stmt = null;
+		
+		String sql = "UPDATE vendedor SET nome=?,email=?,aniversario=?,salario=?,departamentoId=? WHERE id =?";
+		try {
+			stmt = conn.prepareStatement(sql);
 			stmt.setString(1, v.getNome());
 			stmt.setString(2, v.getEmail());
 			stmt.setDate(3, new java.sql.Date(v.getDataAniversario().getTime()));
 			stmt.setDouble(4, v.getSalario());
-			stmt.setInt(5, v.getDepartamento().getId());
+			stmt.setInt(5,v.getDepartamento().getId());
+			stmt.setInt(6, v.getId());
 			
 			int linhasAfetadas = stmt.executeUpdate();
 			
-			if(linhasAfetadas>0) {
-				rs = stmt.getGeneratedKeys();
-				if(rs.next()) {
-					int id = rs.getInt(1);
-					v.setId(id);
-				}
-			}
-			
-			System.out.println("Adicionado com sucesso");
+			System.out.println("Atualizado com sucesso !");
 			System.out.println("Linhas afetadas : "+linhasAfetadas);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -80,29 +100,32 @@ public class VendedorDAOImpl implements VendedorDAO{
 	}
 
 	@Override
-	public void atualizar(Vendedor d) {
-		// TODO Auto-generated method stub
+	public void removerPorId(int id) {
 		PreparedStatement stmt = null;
-		String sql = "UPDATE vendedor SET nome = ? WHERE id = ?";
+		String sql = "DELETE FROM vendedor WHERE id = ?";
+		
+		int linhasAfetadas;
 		try {
 			stmt = conn.prepareStatement(sql);
-			stmt.setString(1, d.getNome());
-			stmt.setInt(2, d.getId());
-			
-			int linhasAfetadas = stmt.executeUpdate();
-			
-			System.out.println("Atualizado com sucesso");
-			System.out.println("Linhas afetadas : "+linhasAfetadas);
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+			stmt.setInt(1,id);
+			linhasAfetadas = stmt.executeUpdate();
+			if(linhasAfetadas == 0) {
+				throw new MinhaException("Não existe.");
+			}else {
 
-	@Override
-	public void removerPorId(int id) {
-		// TODO Auto-generated method stub
-		
+			System.out.println("Excluido com sucesso !");
+			System.out.println("Linhas afetadas : "+linhasAfetadas);
+			}
+		} catch (SQLException e) {
+			throw new MinhaException(e.getMessage());
+		}finally {
+			try {
+				stmt.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 	@Override
