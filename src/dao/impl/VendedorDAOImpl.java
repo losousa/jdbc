@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,20 +41,28 @@ public class VendedorDAOImpl implements VendedorDAO{
 		return d;
 	}
 	@Override
-	public void adicionar(Vendedor d) {
+	public void adicionar(Vendedor v) {
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
 			
-		String sql = "insert into vendedor(id,nome,email,aniversario,salario,departamentoId)values(id.nextval,?,?,?,?,?)";
+		String sql = "insert into vendedor(nome,email,aniversario,salario,departamentoId)values(?,?,?,?,?)";
 		try {
-			stmt = conn.prepareStatement(sql);
-			stmt.setString(1, d.getNome());
-			stmt.setString(2, d.getEmail());
-			stmt.setDate(3, new java.sql.Date(d.getDataAniversario().getTime()));
-			stmt.setDouble(4, d.getSalario());
-			stmt.setInt(5, d.getDepartamento().getId());
+			stmt = conn.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);
+			stmt.setString(1, v.getNome());
+			stmt.setString(2, v.getEmail());
+			stmt.setDate(3, new java.sql.Date(v.getDataAniversario().getTime()));
+			stmt.setDouble(4, v.getSalario());
+			stmt.setInt(5, v.getDepartamento().getId());
 			
 			int linhasAfetadas = stmt.executeUpdate();
+			
+			if(linhasAfetadas>0) {
+				rs = stmt.getGeneratedKeys();
+				if(rs.next()) {
+					int id = rs.getInt(1);
+					v.setId(id);
+				}
+			}
 			
 			System.out.println("Adicionado com sucesso");
 			System.out.println("Linhas afetadas : "+linhasAfetadas);
